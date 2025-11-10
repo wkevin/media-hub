@@ -36,14 +36,21 @@ export function MediaDetailPage() {
     );
   }
   const renderMedia = () => {
+    // NOTE: Since we are using placeholder URLs from the backend simulation,
+    // we will use fallback demo videos/audio for now. In a real R2 integration,
+    // media.fileUrl would point to the actual R2 object.
+    const videoUrl = media.fileUrl.includes('placeholder') ? "https://www.w3schools.com/html/mov_bbb.mp4" : media.fileUrl;
+    const audioUrl = media.fileUrl.includes('placeholder') ? "https://www.w3schools.com/html/horse.mp3" : media.fileUrl;
     switch (media.type) {
       case 'pdf':
-        return <PdfViewer fileUrl={media.fileUrl} />;
+        // For PDFs, we can use a placeholder document if the URL is a placeholder
+        const pdfUrl = media.fileUrl.includes('placeholder') ? "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" : media.fileUrl;
+        return <PdfViewer fileUrl={pdfUrl} />;
       case 'video':
         return (
           <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
             <video controls className="w-full h-full" key={media.fileUrl}>
-              <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
+              <source src={videoUrl} type="video/mp4" />
               Your browser does not support the video tag.
             </video>
           </div>
@@ -52,7 +59,7 @@ export function MediaDetailPage() {
         return (
           <div className="w-full bg-secondary p-8 rounded-lg">
             <audio controls className="w-full" key={media.fileUrl}>
-              <source src="https://www.w3schools.com/html/horse.mp3" type="audio/mpeg" />
+              <source src={audioUrl} type="audio/mpeg" />
               Your browser does not support the audio element.
             </audio>
           </div>

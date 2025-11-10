@@ -17,6 +17,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   const [status, setStatus] = useState<UploadStatus>('idle');
   const [progress, setProgress] = useState(0);
   const addFile = useMediaStore((state) => state.addFile);
+  const pollFileStatus = useMediaStore((state) => state.pollFileStatus);
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       setFile(acceptedFiles[0]);
@@ -47,8 +48,6 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
       if (!signedUrlResponse.ok) throw new Error('Could not get signed URL');
       const { data: signedUrlData }: { data: SignedUrlResponse } = await signedUrlResponse.json();
       // 2. Upload file to the signed URL (simulated for now)
-      // In a real R2 setup, you would use a PUT request to signedUrlData.uploadUrl
-      // Here we simulate the progress.
       await new Promise(resolve => {
         const interval = setInterval(() => {
           setProgress(p => {
@@ -81,8 +80,9 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
       });
       if (!createMediaResponse.ok) throw new Error('Failed to create media entry');
       const { data: createdMedia }: { data: MediaFile } = await createMediaResponse.json();
-      // 4. Update frontend state
+      // 4. Update frontend state and start polling
       addFile(createdMedia);
+      pollFileStatus(createdMedia.id);
       setStatus('success');
     } catch (error) {
       console.error('Upload failed:', error);

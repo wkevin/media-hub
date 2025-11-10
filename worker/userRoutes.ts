@@ -36,6 +36,15 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
         const mediaList = await controller.listMedia();
         return c.json({ success: true, data: mediaList });
     });
+    app.get('/api/media/:id/status', async (c) => {
+        const { id } = c.req.param();
+        const controller = getAppController(c.env);
+        const mediaFile = await controller.getMedia(id);
+        if (!mediaFile) {
+            return c.json({ success: false, error: 'Media not found' }, { status: 404 });
+        }
+        return c.json({ success: true, data: mediaFile });
+    });
     app.post('/api/media/upload', async (c) => {
         const { fileName, contentType } = await c.req.json();
         if (!fileName || !contentType) {
@@ -60,8 +69,14 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
             const body = await c.req.json<Omit<MediaFile, 'createdAt'>>();
             const controller = getAppController(c.env);
             const newMedia = await controller.addMedia(body);
-            // In a real app, you would trigger the AI processing here.
-            // For now, we'll just add it with 'processing' status.
+            // Trigger AI processing asynchronously
+            const agent = await getAgentByName<Env, ChatAgent>(c.env.CHAT_AGENT, `media-analyzer-${newMedia.id}`);
+            const analysisRequest = new Request(`http://localhost/analyze`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newMedia),
+            });
+            c.executionCtx.waitUntil(agent.fetch(analysisRequest));
             return c.json({ success: true, data: newMedia }, { status: 201 });
         } catch (error) {
             console.error('Failed to create media entry:', error);

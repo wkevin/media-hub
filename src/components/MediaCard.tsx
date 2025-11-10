@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { FileText, Video, Mic, Loader2 } from 'lucide-react';
-import type { MediaFile } from '@/lib/mock-data';
+import type { MediaFile } from '../../worker/types';
 interface MediaCardProps {
   media: MediaFile;
 }

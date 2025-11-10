@@ -88,6 +88,7 @@ export class AppController extends DurableObject<Env> {
       mediaFile.status = status;
       if (summary) mediaFile.summary = summary;
       if (tags) mediaFile.tags = tags;
+      this.media.set(id, mediaFile); // Re-set to update the map entry
       await this.persist();
       return true;
     }
