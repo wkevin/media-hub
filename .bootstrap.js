@@ -80,7 +80,8 @@ function runSetupCommands() {
     const commands = [
     "bun add react-dropzone@^14.2.3",
     "bun add react-pdf@^8.0.0",
-    "bun add pdfjs-dist@^4.4.178"
+    "bun add pdfjs-dist@^4.4.178",
+    "bun install react-dropzone react-pdf"
 ];
     
     if (commands.length === 0) {
