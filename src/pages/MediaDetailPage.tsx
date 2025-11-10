@@ -1,57 +1,32 @@
-import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useMediaStore } from '@/lib/store';
+import { mockData } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Tag, Loader2 } from 'lucide-react';
+import { ArrowLeft, Tag } from 'lucide-react';
 import { PdfViewer } from '@/components/PdfViewer';
 export function MediaDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const files = useMediaStore((state) => state.files);
-  const fetchFiles = useMediaStore((state) => state.fetchFiles);
-  const isLoading = useMediaStore((state) => state.isLoading);
-  const media = files.find((m) => m.id === id);
-  useEffect(() => {
-    if (files.length === 0) {
-      fetchFiles();
-    }
-  }, [files.length, fetchFiles]);
-  if (isLoading && !media) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-indigo-600" />
-      </div>
-    );
-  }
+  const media = mockData.find((m) => m.id === id);
   if (!media) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-center">
         <h2 className="text-2xl font-bold mb-4">Media not found</h2>
-        <p className="text-muted-foreground mb-6">The requested file could not be found.</p>
-        <Button asChild className="bg-indigo-600 hover:bg-indigo-700">
+        <Button asChild>
           <Link to="/">Go back to Dashboard</Link>
         </Button>
       </div>
     );
   }
   const renderMedia = () => {
-    // NOTE: Since we are using placeholder URLs from the backend simulation,
-    // we will use fallback demo videos/audio for now. In a real R2 integration,
-    // media.fileUrl would point to the actual R2 object.
-    const videoUrl = media.fileUrl.includes('placeholder') ? "https://www.w3schools.com/html/mov_bbb.mp4" : media.fileUrl;
-    const audioUrl = media.fileUrl.includes('placeholder') ? "https://www.w3schools.com/html/horse.mp3" : media.fileUrl;
     switch (media.type) {
-      case 'pdf': {
-        // For PDFs, we can use a placeholder document if the URL is a placeholder
-        const pdfUrl = media.fileUrl.includes('placeholder') ? "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" : media.fileUrl;
-        return <PdfViewer fileUrl={pdfUrl} />;
-      }
+      case 'pdf':
+        return <PdfViewer fileUrl={media.fileUrl} />;
       case 'video':
         return (
           <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
-            <video controls className="w-full h-full" key={media.fileUrl}>
-              <source src={videoUrl} type="video/mp4" />
+            <video controls className="w-full h-full">
+              <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
               Your browser does not support the video tag.
             </video>
           </div>
@@ -59,8 +34,8 @@ export function MediaDetailPage() {
       case 'audio':
         return (
           <div className="w-full bg-secondary p-8 rounded-lg">
-            <audio controls className="w-full" key={media.fileUrl}>
-              <source src={audioUrl} type="audio/mpeg" />
+            <audio controls className="w-full">
+              <source src="https://www.w3schools.com/html/horse.mp3" type="audio/mpeg" />
               Your browser does not support the audio element.
             </audio>
           </div>
@@ -91,14 +66,7 @@ export function MediaDetailPage() {
                 <CardTitle>AI Summary</CardTitle>
               </CardHeader>
               <CardContent>
-                {media.status === 'processing' ? (
-                   <div className="flex items-center text-muted-foreground">
-                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                     <span>Analysis in progress...</span>
-                   </div>
-                ) : (
-                  <p className="text-muted-foreground">{media.summary}</p>
-                )}
+                <p className="text-muted-foreground">{media.summary}</p>
               </CardContent>
             </Card>
             <Card>
@@ -109,20 +77,13 @@ export function MediaDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {media.status === 'processing' ? (
-                   <div className="flex items-center text-muted-foreground">
-                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                     <span>Generating tags...</span>
-                   </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {media.tags.length > 0 ? media.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-sm">
-                        {tag}
-                      </Badge>
-                    )) : <p className="text-sm text-muted-foreground">No tags available.</p>}
-                  </div>
-                )}
+                <div className="flex flex-wrap gap-2">
+                  {media.tags.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="text-sm">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </div>
