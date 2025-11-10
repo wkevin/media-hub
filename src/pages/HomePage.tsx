@@ -19,6 +19,9 @@ export function HomePage() {
   useEffect(() => {
     fetchFiles();
   }, [fetchFiles]);
+  const handleTagClick = (tag: string) => {
+    setSearchQuery(tag);
+  };
   const filteredData = files.filter((item) =>
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -80,7 +83,7 @@ export function HomePage() {
             >
               <h2 className="text-2xl font-semibold mb-2">No Results Found</h2>
               <p className="text-muted-foreground">
-                Try adjusting your search for "{searchQuery}".
+                Your search for "{searchQuery}" did not match any files.
               </p>
             </motion.div>
         );
@@ -94,7 +97,7 @@ export function HomePage() {
       >
         {filteredData.map((item) => (
           <motion.div key={item.id} variants={itemVariants}>
-            <MediaCard media={item} />
+            <MediaCard media={item} onTagClick={handleTagClick} />
           </motion.div>
         ))}
       </motion.div>
@@ -122,8 +125,11 @@ export function HomePage() {
             {renderContent()}
           </AnimatePresence>
         </main>
-        <footer className="text-center py-8 text-muted-foreground">
-          <p>Built with ❤️ at Cloudflare</p>
+        <footer className="text-center py-8 text-muted-foreground text-sm space-y-2">
+          <p>Built with ❤️ at Cloudflare.</p>
+          <p>
+            Please note: AI capabilities are subject to usage limits across all applications.
+          </p>
         </footer>
       </div>
       <UploadDialog isOpen={isUploadOpen} onOpenChange={setUploadOpen} />

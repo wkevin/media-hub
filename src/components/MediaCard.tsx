@@ -7,14 +7,22 @@ import { FileText, Video, Mic, Loader2 } from 'lucide-react';
 import type { MediaFile } from '../../worker/types';
 interface MediaCardProps {
   media: MediaFile;
+  onTagClick?: (tag: string) => void;
 }
 const iconMap = {
   pdf: <FileText className="h-5 w-5 text-pink-500" />,
   video: <Video className="h-5 w-5 text-green-500" />,
   audio: <Mic className="h-5 w-5 text-indigo-500" />,
 };
-export function MediaCard({ media }: MediaCardProps) {
+export function MediaCard({ media, onTagClick }: MediaCardProps) {
   const isProcessing = media.status === 'processing';
+  const handleTagClick = (e: React.MouseEvent, tag: string) => {
+    if (onTagClick) {
+      e.preventDefault();
+      e.stopPropagation();
+      onTagClick(tag);
+    }
+  };
   return (
     <motion.div
       whileHover={{ y: -5, scale: 1.02 }}
@@ -54,7 +62,15 @@ export function MediaCard({ media }: MediaCardProps) {
           <CardFooter className="p-4 pt-0">
             <div className="flex flex-wrap gap-2">
               {media.tags.slice(0, 3).map((tag) => (
-                <Badge key={tag} variant="secondary" className="font-normal">
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className={cn(
+                    'font-normal',
+                    onTagClick && 'cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors'
+                  )}
+                  onClick={(e) => handleTagClick(e, tag)}
+                >
                   {tag}
                 </Badge>
               ))}

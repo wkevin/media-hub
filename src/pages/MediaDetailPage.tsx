@@ -42,10 +42,11 @@ export function MediaDetailPage() {
     const videoUrl = media.fileUrl.includes('placeholder') ? "https://www.w3schools.com/html/mov_bbb.mp4" : media.fileUrl;
     const audioUrl = media.fileUrl.includes('placeholder') ? "https://www.w3schools.com/html/horse.mp3" : media.fileUrl;
     switch (media.type) {
-      case 'pdf':
+      case 'pdf': {
         // For PDFs, we can use a placeholder document if the URL is a placeholder
         const pdfUrl = media.fileUrl.includes('placeholder') ? "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" : media.fileUrl;
         return <PdfViewer fileUrl={pdfUrl} />;
+      }
       case 'video':
         return (
           <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
