@@ -1,5 +1,5 @@
 # CogniCanvas: AI-Powered Media Hub
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/wkevin/media-hub)
 CogniCanvas is a visually stunning web application designed for users to upload, analyze, and interact with their media and PDF files. Upon uploading a file, the application leverages a powerful AI agent to perform a deep analysis of the content. This analysis generates a concise summary and a set of relevant tags, making the content easily discoverable. The core of the application is a beautiful, modern, and illustrative user interface that presents the user's files in a gallery-style grid.
 ## ✨ Key Features
 *   **AI-Powered Analysis**: Automatically generates summaries and relevant tags for all uploaded media and documents.
@@ -72,7 +72,7 @@ To run the application locally, you'll need to start both the frontend Vite serv
 This project is designed for easy deployment to Cloudflare Pages.
 1.  **One-Click Deploy:**
     You can deploy this project to your own Cloudflare account with a single click.
-    [cloudflarebutton]
+    [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/wkevin/media-hub)
 2.  **Manual Deployment via CLI:**
     If you've set up the project locally, you can deploy it using the Wrangler CLI.
     First, ensure you have logged into your Cloudflare account:
