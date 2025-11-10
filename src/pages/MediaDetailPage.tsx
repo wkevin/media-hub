@@ -1,18 +1,35 @@
+import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { mockData } from '@/lib/mock-data';
+import { useMediaStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Tag } from 'lucide-react';
+import { ArrowLeft, Tag, Loader2 } from 'lucide-react';
 import { PdfViewer } from '@/components/PdfViewer';
 export function MediaDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const media = mockData.find((m) => m.id === id);
+  const files = useMediaStore((state) => state.files);
+  const fetchFiles = useMediaStore((state) => state.fetchFiles);
+  const isLoading = useMediaStore((state) => state.isLoading);
+  const media = files.find((m) => m.id === id);
+  useEffect(() => {
+    if (files.length === 0) {
+      fetchFiles();
+    }
+  }, [files.length, fetchFiles]);
+  if (isLoading && !media) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
   if (!media) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-center">
         <h2 className="text-2xl font-bold mb-4">Media not found</h2>
-        <Button asChild>
+        <p className="text-muted-foreground mb-6">The requested file could not be found.</p>
+        <Button asChild className="bg-indigo-600 hover:bg-indigo-700">
           <Link to="/">Go back to Dashboard</Link>
         </Button>
       </div>
@@ -25,7 +42,7 @@ export function MediaDetailPage() {
       case 'video':
         return (
           <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
-            <video controls className="w-full h-full">
+            <video controls className="w-full h-full" key={media.fileUrl}>
               <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
               Your browser does not support the video tag.
             </video>
@@ -34,7 +51,7 @@ export function MediaDetailPage() {
       case 'audio':
         return (
           <div className="w-full bg-secondary p-8 rounded-lg">
-            <audio controls className="w-full">
+            <audio controls className="w-full" key={media.fileUrl}>
               <source src="https://www.w3schools.com/html/horse.mp3" type="audio/mpeg" />
               Your browser does not support the audio element.
             </audio>
@@ -66,7 +83,14 @@ export function MediaDetailPage() {
                 <CardTitle>AI Summary</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">{media.summary}</p>
+                {media.status === 'processing' ? (
+                   <div className="flex items-center text-muted-foreground">
+                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                     <span>Analysis in progress...</span>
+                   </div>
+                ) : (
+                  <p className="text-muted-foreground">{media.summary}</p>
+                )}
               </CardContent>
             </Card>
             <Card>
@@ -77,13 +101,20 @@ export function MediaDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {media.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="text-sm">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
+                {media.status === 'processing' ? (
+                   <div className="flex items-center text-muted-foreground">
+                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                     <span>Generating tags...</span>
+                   </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {media.tags.length > 0 ? media.tags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="text-sm">
+                        {tag}
+                      </Badge>
+                    )) : <p className="text-sm text-muted-foreground">No tags available.</p>}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

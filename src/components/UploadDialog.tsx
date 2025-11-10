@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { UploadCloud, File, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useMediaStore } from '@/lib/store';
+import type { MediaFile, SignedUrlResponse } from '../../worker/types';
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
 interface UploadDialogProps {
   isOpen: boolean;
@@ -14,6 +16,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<UploadStatus>('idle');
   const [progress, setProgress] = useState(0);
+  const addFile = useMediaStore((state) => state.addFile);
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       setFile(acceptedFiles[0]);
@@ -30,21 +33,61 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
       'audio/*': ['.mp3', '.wav', '.m4a'],
     },
   });
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!file) return;
     setStatus('uploading');
     setProgress(0);
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setStatus('success');
-          return 100;
-        }
-        return prev + 10;
+    try {
+      // 1. Get signed URL from our backend
+      const signedUrlResponse = await fetch('/api/media/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: file.name, contentType: file.type }),
       });
-    }, 200);
+      if (!signedUrlResponse.ok) throw new Error('Could not get signed URL');
+      const { data: signedUrlData }: { data: SignedUrlResponse } = await signedUrlResponse.json();
+      // 2. Upload file to the signed URL (simulated for now)
+      // In a real R2 setup, you would use a PUT request to signedUrlData.uploadUrl
+      // Here we simulate the progress.
+      await new Promise(resolve => {
+        const interval = setInterval(() => {
+          setProgress(p => {
+            const newProgress = p + 20;
+            if (newProgress >= 100) {
+              clearInterval(interval);
+              resolve(true);
+              return 100;
+            }
+            return newProgress;
+          });
+        }, 200);
+      });
+      // 3. Notify backend that upload is complete
+      const fileType = file.type.startsWith('video') ? 'video' : file.type.startsWith('audio') ? 'audio' : 'pdf';
+      const newMediaFile: Omit<MediaFile, 'createdAt'> = {
+        id: signedUrlData.fileId,
+        title: file.name,
+        type: fileType,
+        summary: 'AI analysis is in progress...',
+        tags: [],
+        thumbnailUrl: 'https://images.unsplash.com/photo-1588345921523-c2dcdb7f1dcd?q=80&w=2070&auto=format&fit=crop', // Placeholder
+        fileUrl: signedUrlData.readUrl,
+        status: 'processing',
+      };
+      const createMediaResponse = await fetch('/api/media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newMediaFile),
+      });
+      if (!createMediaResponse.ok) throw new Error('Failed to create media entry');
+      const { data: createdMedia }: { data: MediaFile } = await createMediaResponse.json();
+      // 4. Update frontend state
+      addFile(createdMedia);
+      setStatus('success');
+    } catch (error) {
+      console.error('Upload failed:', error);
+      setStatus('error');
+    }
   };
   const handleReset = () => {
     setFile(null);
@@ -52,8 +95,10 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
     setProgress(0);
   };
   const handleClose = () => {
-    handleReset();
-    onOpenChange(false);
+    if (status !== 'uploading') {
+      handleReset();
+      onOpenChange(false);
+    }
   };
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -69,7 +114,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
             <div
               {...getRootProps()}
               className={`p-10 border-2 border-dashed rounded-lg text-center cursor-pointer transition-colors ${
-                isDragActive ? 'border-indigo-600 bg-indigo-50' : 'border-border hover:border-indigo-400'
+                isDragActive ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' : 'border-border hover:border-indigo-400'
               }`}
             >
               <input {...getInputProps()} />
@@ -94,7 +139,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
                   <div className="space-y-4">
                     <div className="flex items-center gap-4 p-4 border rounded-lg">
                       <File className="h-8 w-8 text-indigo-600" />
-                      <div className="flex-1">
+                      <div className="flex-1 overflow-hidden">
                         <p className="font-semibold truncate">{file.name}</p>
                         <p className="text-sm text-muted-foreground">
                           {(file.size / 1024 / 1024).toFixed(2)} MB
@@ -103,7 +148,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" onClick={handleReset}>Cancel</Button>
-                      <Button onClick={handleUpload}>Upload & Analyze</Button>
+                      <Button onClick={handleUpload} className="bg-indigo-600 hover:bg-indigo-700">Upload & Analyze</Button>
                     </div>
                   </div>
                 )}
@@ -119,7 +164,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
                   <div className="text-center space-y-4">
                     <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
                     <p className="font-semibold">Upload Complete!</p>
-                    <p className="text-muted-foreground">Your file has been successfully analyzed.</p>
+                    <p className="text-muted-foreground">Your file is now being processed.</p>
                     <Button onClick={handleClose}>Done</Button>
                   </div>
                 )}

@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import type { MediaFile } from '../../worker/types';
-const pollingIntervals = new Map<string, number>();
 interface MediaState {
   files: MediaFile[];
   isLoading: boolean;
@@ -10,11 +9,10 @@ interface MediaState {
 interface MediaActions {
   fetchFiles: () => Promise<void>;
   addFile: (file: MediaFile) => void;
-  updateFile: (file: MediaFile) => void;
-  pollFileStatus: (fileId: string) => void;
+  updateFileStatus: (id: string, status: 'processed' | 'processing' | 'failed', summary?: string, tags?: string[]) => void;
 }
 export const useMediaStore = create<MediaState & MediaActions>()(
-  immer((set, get) => ({
+  immer((set) => ({
     files: [],
     isLoading: false,
     error: null,
@@ -26,12 +24,6 @@ export const useMediaStore = create<MediaState & MediaActions>()(
         const data = await response.json();
         if (data.success) {
           set({ files: data.data, isLoading: false });
-          // Start polling for any files that are still processing
-          data.data.forEach((file: MediaFile) => {
-            if (file.status === 'processing') {
-              get().pollFileStatus(file.id);
-            }
-          });
         } else {
           throw new Error(data.error || 'Failed to fetch files');
         }
@@ -44,41 +36,15 @@ export const useMediaStore = create<MediaState & MediaActions>()(
         state.files.unshift(file);
       });
     },
-    updateFile: (updatedFile) => {
+    updateFileStatus: (id, status, summary, tags) => {
       set((state) => {
-        const index = state.files.findIndex((f) => f.id === updatedFile.id);
-        if (index !== -1) {
-          state.files[index] = updatedFile;
+        const file = state.files.find((f) => f.id === id);
+        if (file) {
+          file.status = status;
+          if (summary) file.summary = summary;
+          if (tags) file.tags = tags;
         }
       });
-    },
-    pollFileStatus: (fileId: string) => {
-      if (pollingIntervals.has(fileId)) {
-        return; // Already polling this file
-      }
-      const intervalId = window.setInterval(async () => {
-        try {
-          const response = await fetch(`/api/media/${fileId}/status`);
-          if (!response.ok) {
-            // Stop polling on 404 or other fatal errors
-            clearInterval(intervalId);
-            pollingIntervals.delete(fileId);
-            return;
-          }
-          const result = await response.json();
-          if (result.success && result.data.status !== 'processing') {
-            get().updateFile(result.data);
-            clearInterval(intervalId);
-            pollingIntervals.delete(fileId);
-          }
-        } catch (error) {
-          console.error(`Polling failed for ${fileId}:`, error);
-          // Optionally stop polling on network errors
-          clearInterval(intervalId);
-          pollingIntervals.delete(fileId);
-        }
-      }, 5000); // Poll every 5 seconds
-      pollingIntervals.set(fileId, intervalId);
     },
   }))
 );
